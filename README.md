@@ -24,14 +24,11 @@ vector_MyStruct_delete  // delete int value from vector of type MyStruct
 ## List
 ### Gen macro
 ```C
-genlist(<type>);
+genlist(Ty);
 ```
+*Ty* - type of list
 
 ### Functions
-List pair structure
-
-Note: *Ty* in declarations - type for SCT type
-
 ```C
 struct list_##Ty##_pair_t {
     // ptr to value
@@ -91,4 +88,38 @@ int list_##Ty##_free(list_##Ty##_pair_t *start);
 // start - start pair of list, created with list_##Ty##_create
 // return 0 if all good, else return not 0
 int list_##Ty##_full_free(list_##Ty##_pair_t *start);
+```
+
+## Vector
+### Gen macro
+```C
+genvector(Ty, ExSz);
+```
+Ty - type of vector
+ExSz - size by which vector will be extended on each overflow
+
+### Functions
+```C
+typedef struct {
+    // array of values
+    Ty  *arr;
+    // used size of array
+    size_t size;
+    // alocated size of array
+    size_t aloc_size;
+} vector_##Ty##_t;
+```
+```C
+// create and return empty vector
+vector_##Ty##_t *vector_##Ty##_create();
+```
+```C
+// push back value
+// vec - vector
+// val - value
+void vector_##Ty##_push_back(vector_##Ty##_t *vec, Ty val);
+```
+```C
+// delete vector and free memory witch been alocated for it
+void vector_##Ty##_free(vector_##Ty##_t *vec);
 ```
