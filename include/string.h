@@ -10,15 +10,13 @@ typedef struct
     size_t aloc_size;
 } string_t;
 
-void string_cat(string_t *str, char *fmt, ...);
-
-string_t *string_create(char *init_val)
+string_t *string_create()
 {
     string_t *str = malloc(sizeof(string_t));
-    str->str = malloc(sizeof(char) * ((strlen(init_val) + 1) / 512 + 1)*512);
+    str->str = malloc(sizeof(char) * 512);
     str->str[0] = '\0';
     str->size = 0;
-    str->aloc_size = sizeof(char) * ((strlen(init_val) + 1) / 512 + 1)*512;
+    str->aloc_size = 512;
     return str;
 }
 
@@ -32,12 +30,12 @@ void __string_realoc(string_t *str)
     str->str = new_str;
 }
 
-void string_push_back(string_t *str, char val)
+void string_push_back(string_t *str, char c)
 {
     if (str->size + 2 >= str->aloc_size) {
         __string_realoc(str);
     }
-    str->str[str->size++] = val;
+    str->str[str->size++] = c;
     str->str[str->size]   = '\0';
 }
 

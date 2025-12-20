@@ -18,7 +18,7 @@ int main(int argc, char **argv)
                 for (size_t i = 0; i < 2048; i++) {
                     buf[i] = 0;
                 }
-                string_t *str = string_create("");
+                string_t *str = string_create();
                 if (str->size != 0) {
                     err("Err:Wrong init size\n"
                         "    size:%u\n",

@@ -3,7 +3,7 @@
 
 #include <malloc.h>
 
-#define foreach(Ty, list) for (Ty *cur = list; cur && cur->val; cur = cur->next)
+#define foreach(LtTy, list) for (LtTy *cur = list; cur && cur->val; cur = cur->next)
 
 #define genlist(Ty)  \
 struct list_##Ty##_pair_t {  \
