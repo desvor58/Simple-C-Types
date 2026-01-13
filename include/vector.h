@@ -23,7 +23,9 @@ sct_vector_t *sct_vector_create(size_t extend_size)
 void __sct_vector_extend(sct_vector_t *vec)
 {
     void **new_arr = malloc(sizeof(void*) * (vec->real_size += vec->_extend_size));
-    memcpy(new_arr, vec->arr, vec->size);
+    for (size_t i = 0; i < vec->size; i++) {
+        new_arr[i] = vec->arr[i];
+    }
     free(vec->arr);
     vec->arr = new_arr;
 }

@@ -1,14 +1,12 @@
 #include "../test_template.h"
 #include "../../include/list.h"
 
-genlist(int)
-
 int main(int argc, char **argv)
 {
     test {
         log("list init\n", 0);
-        list_int_pair_t *list = list_int_create();
-        if (list_int_size(list)) {
+        sct_list_pair_t *list = sct_list_pair_create(0);
+        if (sct_list_size(list)) {
             err("Err:Wrong list init size (!= 0)\n"
                     "    val:%u, next:%u\n",
                     list->val,
@@ -19,18 +17,18 @@ int main(int argc, char **argv)
         for (size_t i = 0; i < top; i++) {
             int *it = malloc(sizeof(int));
             *it = i;
-            log("list add i%u\n", i);
-            list_int_add(list, it);
-            if (list_int_size(list) != i + 1) {
+            log("list adding i%u\n", i);
+            sct_list_push_back(list, it);
+            if (sct_list_size(list) != i + 1) {
                 err("Err:Wrong list size\n"
                     "    size:%u, next:%u\n",
-                    list_int_size(list),
+                    sct_list_size(list),
                     list->next);
             }
 
-            for (size_t j = 0; j < list_int_size(list); j++) {
+            for (size_t j = 0; j < sct_list_size(list); j++) {
                 log("list get e%u\n", j);
-                int *el = list_int_get(list, j);
+                int *el = sct_list_get(list, j);
                 if (*el != j) {
                     err("Err:Wrong list element\n"
                         "    e:%u\n",
@@ -38,6 +36,6 @@ int main(int argc, char **argv)
                 }
             }
         }
-        list_int_full_free(list);
+        sct_list_full_free(list);
     } test_end;
 }

@@ -30,8 +30,12 @@ size_t sct_list_size(sct_list_pair_t *list_start)
 void sct_list_push_back(sct_list_pair_t *list_start, void *val)
 {
     sct_list_pair_t *cur = list_start;
-    while (cur->next) {
+    while (cur->next && cur->val) {
         cur = cur->next;
+    }
+    if (!cur->val) {
+        cur->val = val;
+        return;
     }
     cur->next = sct_list_pair_create(val);
 }
@@ -42,8 +46,9 @@ void *sct_list_get(sct_list_pair_t *list_start, size_t index)
     size_t i = 0;
     while (i < index && cur->next) {
         cur = cur->next;
+        i++;
     }
-    return cur;
+    return cur->val;
 }
 
 void sct_list_set(sct_list_pair_t *list_start, size_t index, void *val)
@@ -65,6 +70,7 @@ sct_list_pair_t *sct_list_delete(sct_list_pair_t *list_start, size_t index)
     while (i < index && cur->next) {
         prev = cur;
         cur = cur->next;
+        i++;
     }
     prev->next = cur->next;
     free(cur);
@@ -84,23 +90,12 @@ sct_list_pair_t *sct_list_full_delete(sct_list_pair_t *list_start, size_t index)
     while (i < index && cur->next) {
         prev = cur;
         cur = cur->next;
+        i++;
     }
     prev->next = cur->next;
     free(cur->val);
     free(cur);
     return list_start;
-}
-
-void sct_list_full_delete(sct_list_pair_t *list_start, size_t index)
-{
-    sct_list_pair_t *cur = list_start;
-    size_t i = 0;
-    while (i < index - 1 && cur->next) {
-        cur = cur->next;
-    }
-    free(cur->next->val);
-    free(cur->next);
-    cur->next = 0;
 }
 
 void sct_list_free(sct_list_pair_t *list_start)

@@ -3,8 +3,6 @@
 
 #include <stdarg.h>
 
-genhashmap(int)
-
 char *format(char *fmt, ...)
 {
     char *buf = malloc(4*1024);
@@ -24,32 +22,32 @@ int main(int argc, char **argv)
 {
     test {
         log("map creating\n", 0);
-        hashmap_int_t *map = hashmap_int_create();
+        sct_hashmap_t *map = sct_hashmap_create();
 
-        if (map->keys_top != 0) {
+        if (sct_list_size(map->keys) != 0) {
             err("Err:Wrong init keys_top\n"
                 "    keys_top:%u\n",
-                map->keys_top);
+                sct_list_size(map->keys));
         }
 
         for (size_t i = 0; i < 100; i++) {
             int *iBt = malloc(sizeof(int));
             *iBt = i;
             log("set 'iNum%u'\n", i);
-            hashmap_int_set(map, format("iNum%u", i), iBt);
+            sct_hashmap_set(map, format("iNum%u", i), iBt);
 
-            if (map->keys_top - 1 != i) {
+            if (sct_list_size(map->keys) != i + 1) {
                 err("Err:keys_top != i\n"
                     "    keys_top:%d\n"
                     "    i:%d\n",
-                    map->keys_top,
+                    sct_list_size(map->keys),
                     i);
             }
 
-            size_t kt = map->keys_top;
+            size_t kt = sct_list_size(map->keys);
             for (size_t j = 0; j < kt; j++) {
                 log("get 'iNum%u' expected %u\n", j, j);
-                int *jBt = hashmap_int_get(map, format("iNum%u", j));
+                int *jBt = sct_hashmap_get(map, format("iNum%u", j));
                 log("cmp jBt and j\n", 0);
                 if (!jBt) {
                     err("Err:jBt == 0\n", 0);
@@ -64,6 +62,6 @@ int main(int argc, char **argv)
             }
         }
 
-        hashmap_int_free(map);
+        sct_hashmap_full_free(map);
     } test_end;
 }
