@@ -102,9 +102,6 @@ int sct_hashmap_full_delete(sct_hashmap_t *map, char *key)
         }
         i++;
     }
-    if (!i) {
-        return 1;
-    }
 
     sct_list_pair_t *bkts = map->buckets_list[crc32(key, strlen(key)) % SCT_HASHMAP_BUCKETS_NUM];
     i = 0;
