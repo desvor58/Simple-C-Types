@@ -1,5 +1,5 @@
 #include "../test_template.h"
-#include "../../include/string.h"
+#include "../../include/SCT/string.h"
 
 int main(int argc, char **argv)
 {
@@ -18,7 +18,7 @@ int main(int argc, char **argv)
                 for (size_t i = 0; i < 2048; i++) {
                     buf[i] = 0;
                 }
-                string_t *str = string_create();
+                sct_string_t *str = sct_string_create();
                 if (str->size != 0) {
                     err("Err:Wrong init size\n"
                         "    size:%u\n",
@@ -37,7 +37,7 @@ int main(int argc, char **argv)
                     }
                     log("push %c\n", c);
                     buf[i++] = c;
-                    string_push_back(str, c);
+                    sct_string_push_back(str, c);
                     log("cmp str and buf\n", 0);
                     if (strcmp(str->str, buf)) {
                         err("Err:str->str != buf\n"
@@ -49,7 +49,7 @@ int main(int argc, char **argv)
                             strcmp(str->str, buf));
                     }
                 }
-                string_free(str);
+                sct_string_free(str);
                 free(buf);
             }
         /* ------------------------ */

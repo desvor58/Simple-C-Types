@@ -74,6 +74,7 @@ sct_list_pair_t *sct_list_delete(sct_list_pair_t *list_start, size_t index)
     }
     prev->next = cur->next;
     free(cur);
+    return list_start;
 }
 
 sct_list_pair_t *sct_list_full_delete(sct_list_pair_t *list_start, size_t index)
@@ -82,6 +83,9 @@ sct_list_pair_t *sct_list_full_delete(sct_list_pair_t *list_start, size_t index)
         sct_list_pair_t *acc = list_start->next;
         free(list_start->val);
         free(list_start);
+        if (!acc) {
+            return sct_list_pair_create(0);
+        }
         return acc;
     }
     sct_list_pair_t *prev = list_start;

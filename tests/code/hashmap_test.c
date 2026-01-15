@@ -1,5 +1,6 @@
 #include "../test_template.h"
-#include "../../include/hashmap.h"
+#include "../../include/SCT/hashmap.h"
+#include "../../include/SCT/vector.h"
 
 #include <stdarg.h>
 
@@ -30,9 +31,13 @@ int main(int argc, char **argv)
                 sct_list_size(map->keys));
         }
 
+        sct_vector_t *indexes = sct_vector_create(200);
         for (size_t i = 0; i < 100; i++) {
             int *iBt = malloc(sizeof(int));
             *iBt = i;
+            int *index = malloc(sizeof(int));
+            *index = i;
+            sct_vector_push_back(indexes, index);
             log("set 'iNum%u'\n", i);
             sct_hashmap_set(map, format("iNum%u", i), iBt);
 
@@ -59,6 +64,35 @@ int main(int argc, char **argv)
                         *jBt,
                         j);
                 }
+            }
+        }
+
+        log("deleting test start\n", 0);
+
+        for (size_t i = 0; i < indexes->size;) {
+            int *index = indexes->arr[i];
+            log("deleting %s\n", format("iNum%u", *index));
+            sct_hashmap_delete(map, format("iNum%u", *index));
+            sct_vector_delete(indexes, i);
+
+            for (size_t j = 0; j < indexes->size; j++) {
+                int *ix = indexes->arr[j];
+                log("getting %s\n", format("iNum%u", *ix));
+                int *el = sct_hashmap_get(map, format("iNum%u", *ix));
+                if (!el) {
+                    err("Err:Element doesnt exits\n", 0);
+                }
+                if (*el != *ix) {
+                    err("Err:wrong val\n"
+                        "    *el:%d\n"
+                        "    *ix:%d\n",
+                        *el,
+                        *ix);
+                }
+            }
+            int *el = sct_hashmap_get(map, format("iNum%u", *index));
+            if (el) {
+                err("Err:ellement gettable\n", 0);
             }
         }
 

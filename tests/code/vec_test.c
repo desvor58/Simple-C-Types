@@ -1,5 +1,5 @@
 #include "../test_template.h"
-#include "../../include/vector.h"
+#include "../../include/SCT/vector.h"
 
 int main(int argc, char **argv)
 {
