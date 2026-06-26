@@ -1,4 +1,4 @@
-#include <common.h>
+#include <SCT/common.h>
 
 void *amalloc(size_t size)
 {

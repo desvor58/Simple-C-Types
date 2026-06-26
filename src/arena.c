@@ -1,4 +1,4 @@
-#include <arena.h>
+#include <SCT/arena.h>
 
 void sct_arena_init(sct_arena_t *arena)
 {

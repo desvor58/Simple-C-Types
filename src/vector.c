@@ -1,4 +1,4 @@
-#include <vector.h>
+#include <SCT/vector.h>
 
 void sct_vector_init(sct_vector_t *vec, size_t item_size)
 {
