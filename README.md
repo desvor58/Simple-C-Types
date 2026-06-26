@@ -76,7 +76,5 @@ sct_hashmap_deinit(&map);
 
 ---
 
----
-
 ## 📜 License
 This project is licensed under the MIT License. For granular implementation specifics, internal memory layout mechanics, and full function documentations, check out our **GitHub Wiki**.
