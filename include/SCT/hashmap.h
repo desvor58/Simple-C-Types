@@ -24,6 +24,10 @@ int sct_hashmap_constains(sct_hashmap_t *map, const char *key);
 
 void sct_hashmap_add(sct_hashmap_t *map, const char *key, void *item);
 
-void *sct_hashmap_get(sct_hashmap_t *map, const char *key);
+#define sct_hashmap_get(map, key, Ty) (*(Ty*)_sct_hashmap_get_impl(map, key))
+
+void *_sct_hashmap_get_impl(sct_hashmap_t *map, const char *key);
+
+void sct_hasmap_remove(sct_hashmap_t *map, const char *key);
 
 #endif

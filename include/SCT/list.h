@@ -22,7 +22,9 @@ void sct_list_deinit(sct_list_t *list);
 
 void sct_list_push(sct_list_t *list, void *item);
 
-void *sct_list_get(sct_list_t *list, size_t index);
+#define sct_list_get(list, index, Ty) (*(Ty*)_sct_list_get_impl(list, index))
+
+void *_sct_list_get_impl(sct_list_t *list, size_t index);
 
 void sct_list_erase(sct_list_t *list, size_t index);
 

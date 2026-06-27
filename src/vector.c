@@ -28,7 +28,7 @@ void sct_vector_push(sct_vector_t *vec, void *item)
     vec->size++;
 }
 
-void *sct_vector_get(sct_vector_t *vec, size_t index)
+void *_sct_vector_get_impl(sct_vector_t *vec, size_t index)
 {
     return vec->data + index * vec->_item_size;
 }
