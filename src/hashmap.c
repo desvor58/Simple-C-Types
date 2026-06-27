@@ -81,7 +81,7 @@ void sct_hashmap_add(sct_hashmap_t *map, const char *key, void *item)
     sct_vector_push(&map->keys, key_copy);
 }
 
-void *_sct_hashmap_get_impl(sct_hashmap_t *map, const char *key)
+void *sct_hashmap_get(sct_hashmap_t *map, const char *key)
 {
     size_t key_len = strlen(key);
     sct_list_t *bkt = &map->buckets[hash_fnv1a(key, key_len) % SCT_HASHMAP_BUCKETS_NUM];

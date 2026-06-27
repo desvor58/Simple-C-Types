@@ -42,7 +42,7 @@ void sct_list_push(sct_list_t *list, void *item)
     list->size++;
 }
 
-void *_sct_list_get_impl(sct_list_t *list, size_t index)
+void *sct_list_get(sct_list_t *list, size_t index)
 {
     if (index >= list->size || !list->size) return 0;
     size_t i = 0;
