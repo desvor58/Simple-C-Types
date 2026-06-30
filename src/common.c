@@ -7,7 +7,7 @@ void *amalloc(size_t size)
     return ret;
 }
 
-char *sct_format(const char *fmt, ...)
+int sct_format(char *buf, size_t buf_size, const char *fmt, ...)
 {
     va_list args1, args2;
     
@@ -19,17 +19,16 @@ char *sct_format(const char *fmt, ...)
 
     if (size < 0) {
         va_end(args2);
-        return NULL;
+        return 1;
     }
 
-    char *str = amalloc(size + 1);
-    if (!str) {
+    if (buf_size < (size_t)size + 1) {
         va_end(args2);
-        return NULL;
+        return 1;
     }
 
-    vsnprintf(str, size + 1, fmt, args2);
+    vsnprintf(buf, buf_size, fmt, args2);
     va_end(args2);
 
-    return str;
+    return 0;
 }

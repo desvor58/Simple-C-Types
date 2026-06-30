@@ -22,7 +22,7 @@ typedef double   f64;
 
 void *amalloc(size_t size);
 
-char *sct_format(const char *fmt, ...);
+int sct_format(char *buf, size_t buf_size, const char *fmt, ...);
 
 inline size_t sct_align_up(size_t size)
 {
