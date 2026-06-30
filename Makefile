@@ -30,12 +30,13 @@ lib: $(TARGET_LIB)
 $(TARGET_LIB): $(OBJS)
 	$(AR) rcs $@ $^
 
-obj/%.o: src/%.c
+obj/%.o: src/%.c init
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
 	$(CLEAN_CMD) obj
 	$(CLEAN_CMD) lib
 
+init:
 	$(call MKDIR_CMD,obj)
 	$(call MKDIR_CMD,lib)
