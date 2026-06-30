@@ -110,7 +110,9 @@ void sct_hasmap_remove(sct_hashmap_t *map, const char *key)
         i++;
     }
     for (size_t i = 0; i < map->keys.size; i++) {
-        if (!strcmp(sct_vector_get(&map->keys, i, char*), key)) {
+        char **k = sct_vector_get(&map->keys, i);
+        if (!k) return;
+        if (!strcmp(*k, key)) {
             sct_vector_erase(&map->keys, i);
             break;
         }
