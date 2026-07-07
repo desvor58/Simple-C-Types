@@ -13,7 +13,7 @@ void sct_vector_deinit(sct_vector_t *vec)
     free(vec->data);
 }
 
-void sct_vector_push(sct_vector_t *vec, void *item)
+static void vector_size_check(sct_vector_t *vec)
 {
     if ((vec->size + 1) * vec->_item_size > vec->cap) {
         vec->cap += (vec->_item_size / SCT_VECTOR_ALLOC_SIZE + 1) * SCT_VECTOR_ALLOC_SIZE;
@@ -24,6 +24,11 @@ void sct_vector_push(sct_vector_t *vec, void *item)
         free(vec->data);
         vec->data = new_data;
     }
+}
+
+void sct_vector_push(sct_vector_t *vec, void *item)
+{
+    vector_size_check(vec);
     memcpy(vec->data + vec->size * vec->_item_size, item, vec->_item_size);
     vec->size++;
 }
@@ -48,4 +53,22 @@ void sct_vector_erase(sct_vector_t *vec, size_t index)
                 (vec->size - index - 1) * vec->_item_size);
     }
     vec->size--;
+}
+
+void sct_vector_insert(sct_vector_t *vec, size_t index, void *item)
+{
+    if (!vec || index >= vec->size) return;
+    if (index == vec->size - 1) {
+        sct_vector_push(vec, item);
+        return;
+    }
+    vector_size_check(vec);
+
+    u8 *insert_pos = vec->data + (index * vec->_item_size);
+    size_t slice_size = (vec->size - index) * vec->_item_size;
+
+    memmove(insert_pos + vec->_item_size, insert_pos, slice_size);
+    memcpy(insert_pos, item, vec->_item_size);
+    
+    vec->size++;
 }
