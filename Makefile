@@ -1,6 +1,6 @@
 CC ?= gcc
 CFLAGS := -Wall -Wextra --std=c99 -Iinclude
-MODE ?= release
+MODE ?= release-fast
 
 SRCS := $(wildcard src/*.c)
 OBJS := $(patsubst src/%.c, obj/%.o, $(SRCS))
@@ -27,7 +27,7 @@ ifeq ($(MODE), debug)
 	CFLAGS += -O0 -g
 endif
 ifeq ($(MODE), release-fast)
-	CFLAGS += -Ofast
+	CFLAGS += -O3
 endif
 ifeq ($(MODE), release-size)
 	CFLAGS += -Os
