@@ -1,4 +1,4 @@
-CC := gcc
+CC ?= gcc
 CFLAGS := -Wall -Wextra --std=c99 -Iinclude
 MODE ?= release
 
@@ -6,10 +6,16 @@ SRCS := $(wildcard src/*.c)
 OBJS := $(patsubst src/%.c, obj/%.o, $(SRCS))
 
 ifeq ($(OS),Windows_NT)
+    RM_DIR = if exist "$(subst /,\,$(1))" rmdir /s /q "$(subst /,\,$(1))"
+    RM_FILE = if exist "$(subst /,\,$(1))" del /q /f "$(subst /,\,$(1))"
+    MKDIR = if not exist "$(subst /,\,$(1))" mkdir "$(subst /,\,$(1))"
 	CLEAN_CMD := del /q
 	MKDIR_CMD = if not exist "$(1)" mkdir "$(1)"
 	SCT_LIB_FILE := sct-win
 else
+    RM_DIR = rm -rf "$(1)"
+    RM_FILE = rm -f "$(1)"
+    MKDIR = mkdir -p "$(1)"
 	CLEAN_CMD := rm -rf
 	MKDIR_CMD = mkdir -p "$(1)"
 	SCT_LIB_FILE := sct-elf
@@ -23,6 +29,8 @@ else
 	CFLAGS += -O3
 endif
 
+.PHONY: all lib clean init test
+
 all: lib
 
 lib: $(TARGET_LIB)
@@ -34,19 +42,9 @@ obj/%.o: src/%.c init
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	if exist obj\* $(CLEAN_CMD) obj
-	if exist lib\* $(CLEAN_CMD) lib
-	if exist tests\test_all.exe del tests\test_all.exe
+	@$(call RM_DIR,obj)
+	@$(call RM_DIR,lib)
 
 init:
-	$(call MKDIR_CMD,obj)
-	$(call MKDIR_CMD,lib)
-
-TEST_SRCS := tests/test_all.c
-TEST_TARGET := tests/test_all.exe
-
-test: $(TARGET_LIB)
-	$(CC) $(CFLAGS) -o $(TEST_TARGET) $(TEST_SRCS) -Llib -l$(SCT_LIB_FILE)
-	$(TEST_TARGET)
-
-.PHONY: all lib clean init test
+	@$(call MKDIR,bin)
+	@$(call MKDIR,lib)
