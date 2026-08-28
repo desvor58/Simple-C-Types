@@ -25,8 +25,11 @@ TARGET_LIB := lib/lib$(SCT_LIB_FILE).a
 
 ifeq ($(MODE), debug)
 	CFLAGS += -O0 -g
-else
-	CFLAGS += -O3
+ifeq ($(MODE), release-fast)
+	CFLAGS += -Ofast
+endif
+ifeq ($(MODE), release-size)
+	CFLAGS += -Os
 endif
 
 .PHONY: all lib clean init test
