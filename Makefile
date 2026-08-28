@@ -33,7 +33,7 @@ endif
 
 all: lib
 
-lib: $(TARGET_LIB)
+lib: init $(TARGET_LIB)
 
 $(TARGET_LIB): $(OBJS)
 	$(AR) rcs $@ $^
@@ -46,5 +46,5 @@ clean:
 	@$(call RM_DIR,lib)
 
 init:
-	@$(call MKDIR,bin)
+	@$(call MKDIR,obj)
 	@$(call MKDIR,lib)
