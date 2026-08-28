@@ -25,6 +25,7 @@ TARGET_LIB := lib/lib$(SCT_LIB_FILE).a
 
 ifeq ($(MODE), debug)
 	CFLAGS += -O0 -g
+endif
 ifeq ($(MODE), release-fast)
 	CFLAGS += -Ofast
 endif
