@@ -34,9 +34,19 @@ obj/%.o: src/%.c init
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	$(CLEAN_CMD) obj
-	$(CLEAN_CMD) lib
+	if exist obj\* $(CLEAN_CMD) obj
+	if exist lib\* $(CLEAN_CMD) lib
+	if exist tests\test_all.exe del tests\test_all.exe
 
 init:
 	$(call MKDIR_CMD,obj)
 	$(call MKDIR_CMD,lib)
+
+TEST_SRCS := tests/test_all.c
+TEST_TARGET := tests/test_all.exe
+
+test: $(TARGET_LIB)
+	$(CC) $(CFLAGS) -o $(TEST_TARGET) $(TEST_SRCS) -Llib -l$(SCT_LIB_FILE)
+	$(TEST_TARGET)
+
+.PHONY: all lib clean init test

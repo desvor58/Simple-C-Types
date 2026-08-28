@@ -24,7 +24,7 @@ void *amalloc(size_t size);
 
 int sct_format(char *buf, size_t buf_size, const char *fmt, ...);
 
-inline size_t sct_align_up(size_t size)
+static inline size_t sct_align_up(size_t size)
 {
     return (size + 7) & ~((size_t)7);
 }

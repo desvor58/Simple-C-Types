@@ -45,12 +45,12 @@ void sct_hashmap_deinit(sct_hashmap_t *map)
     sct_vector_deinit(&map->keys);
 }
 
-int sct_hashmap_constains(sct_hashmap_t *map, const char *key)
+int sct_hashmap_contains(sct_hashmap_t *map, const char *key)
 {
     sct_list_t *bkt = &map->buckets[hash_fnv1a(key, strlen(key)) % SCT_HASHMAP_BUCKETS_NUM];
     
     foreach(bkt) {
-        u8 *container = sct_get_val(cur_pair, u8*);
+        u8 *container = (u8*)cur_pair + sizeof(void*);
         if (!strcmp(container_get_key(container), key)) {
             return 1;
         }
@@ -62,9 +62,9 @@ void sct_hashmap_add(sct_hashmap_t *map, const char *key, void *item)
 {
     size_t key_len = strlen(key);
     sct_list_t *bkt = &map->buckets[hash_fnv1a(key, key_len) % SCT_HASHMAP_BUCKETS_NUM];
-    if (sct_hashmap_constains(map, key)) {
+    if (sct_hashmap_contains(map, key)) {
         foreach (bkt) {
-            u8 *container = sct_get_val(cur_pair, u8*);
+            u8 *container = (u8*)cur_pair + sizeof(void*);
             if (!strcmp(container_get_key(container), key)) {
                 memcpy(container_get_val(container), item, map->_item_size);
                 return;
@@ -78,7 +78,7 @@ void sct_hashmap_add(sct_hashmap_t *map, const char *key, void *item)
     container_set_key(container, key_copy);
     memcpy(container_get_val(container), item, map->_item_size);
     sct_list_push(bkt, container);
-    sct_vector_push(&map->keys, key_copy);
+    sct_vector_push(&map->keys, &key_copy);
 }
 
 void *sct_hashmap_get(sct_hashmap_t *map, const char *key)
@@ -87,7 +87,7 @@ void *sct_hashmap_get(sct_hashmap_t *map, const char *key)
     sct_list_t *bkt = &map->buckets[hash_fnv1a(key, key_len) % SCT_HASHMAP_BUCKETS_NUM];
 
     foreach (bkt) {
-        u8 *container = sct_get_val(cur_pair, u8*);
+        u8 *container = (u8*)cur_pair + sizeof(void*);
         if (!strcmp(container_get_key(container), key)) {
             return container_get_val(container);
         }
@@ -95,14 +95,14 @@ void *sct_hashmap_get(sct_hashmap_t *map, const char *key)
     return 0;
 }
 
-void sct_hasmap_remove(sct_hashmap_t *map, const char *key)
+void sct_hashmap_remove(sct_hashmap_t *map, const char *key)
 {
     size_t key_len = strlen(key);
     sct_list_t *bkt = &map->buckets[hash_fnv1a(key, key_len) % SCT_HASHMAP_BUCKETS_NUM];
 
     size_t i = 0;
     foreach (bkt) {
-        u8 *container = sct_get_val(cur_pair, u8*);
+        u8 *container = (u8*)cur_pair + sizeof(void*);
         if (!strcmp(container_get_key(container), key)) {
             sct_list_erase(bkt, i);
             break;

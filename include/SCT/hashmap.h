@@ -20,12 +20,12 @@ void sct_hashmap_init(sct_hashmap_t *map, size_t item_size);
 
 void sct_hashmap_deinit(sct_hashmap_t *map);
 
-int sct_hashmap_constains(sct_hashmap_t *map, const char *key);
+int sct_hashmap_contains(sct_hashmap_t *map, const char *key);
 
 void sct_hashmap_add(sct_hashmap_t *map, const char *key, void *item);
 
-void *sct_hashmap_get(sct_hashmap_t *map, const char *key);
+void *sct_hashmap_get(sct_hashmap_t *map, const char *key);=
 
-void sct_hasmap_remove(sct_hashmap_t *map, const char *key);
+void sct_hashmap_remove(sct_hashmap_t *map, const char *key);
 
 #endif

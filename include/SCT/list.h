@@ -6,8 +6,8 @@
 #define sct_get_val(pair, T) *(T*)((u8*)pair + sizeof(void*))
 
 #define foreach(list)  \
-    for (void *cur_pair = (list)->first_pair, *next_pair = cur_pair ? *(void**)cur_pair : NULL;  \
-         cur_pair && *(void**)cur_pair;  \
+    for (void *cur_pair = (list)->first_pair ? *(void**)(list)->first_pair : NULL, *next_pair = cur_pair ? *(void**)cur_pair : NULL;  \
+         cur_pair;  \
          cur_pair = next_pair, next_pair = cur_pair ? *(void**)cur_pair : NULL)
 
 typedef struct {
