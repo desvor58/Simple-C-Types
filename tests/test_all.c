@@ -1,4 +1,7 @@
 #include <SCT/arena.h>
+#include <SCT/arena_vector.h>
+#include <SCT/arena_list.h>
+#include <SCT/arena_hashmap.h>
 #include <SCT/vector.h>
 #include <SCT/list.h>
 #include <SCT/hashmap.h>
@@ -307,6 +310,129 @@ static void test_common(void)
     ASSERT(sct_align_up(0) == 0, "align_up(0) == 0");
 }
 
+/* ==================== ARENA VECTOR TESTS ==================== */
+static void test_arena_vector(void)
+{
+    printf("\n--- Arena Vector Tests ---\n");
+
+    sct_arena_t arena;
+    sct_arena_init(&arena);
+
+    sct_arena_vector_t vec;
+    sct_arena_vector_init(&vec, &arena, sizeof(int));
+    ASSERT(vec.arena == &arena, "arena vector init - arena saved");
+    ASSERT(vec.data != NULL, "arena vector init - data not null");
+    ASSERT(vec.size == 0, "arena vector init - size == 0");
+
+    int a = 42, b = 99;
+    sct_arena_vector_push(&vec, &a);
+    sct_arena_vector_push(&vec, &b);
+    ASSERT(vec.size == 2, "arena vector push - size == 2");
+
+    int *g = (int*)sct_arena_vector_get(&vec, 0);
+    ASSERT(g != NULL && *g == 42, "arena vector get(0) == 42");
+    g = (int*)sct_arena_vector_get(&vec, 1);
+    ASSERT(g != NULL && *g == 99, "arena vector get(1) == 99");
+    ASSERT(sct_arena_vector_get(&vec, 5) == NULL, "arena vector get(5) == NULL (out of bounds)");
+
+    /* Bulk push to trigger realloc */
+    for (int i = 0; i < 200; i++) {
+        sct_arena_vector_push(&vec, &i);
+    }
+    ASSERT(vec.size == 202, "arena vector bulk push - size == 202");
+    g = (int*)sct_arena_vector_get(&vec, 201);
+    ASSERT(g != NULL && *g == 199, "arena vector bulk push - last element correct");
+
+    /* deinit must NOT release the arena */
+    size_t arena_size_before = arena.size;
+    sct_arena_vector_deinit(&vec);
+    ASSERT(arena.size == arena_size_before, "arena vector deinit - arena not released");
+
+    sct_arena_deinit(&arena);
+}
+
+/* ==================== ARENA LIST TESTS ==================== */
+static void test_arena_list(void)
+{
+    printf("\n--- Arena List Tests ---\n");
+
+    sct_arena_t arena;
+    sct_arena_init(&arena);
+
+    sct_arena_list_t list;
+    sct_arena_list_init(&list, &arena, sizeof(int));
+    ASSERT(list.arena == &arena, "arena list init - arena saved");
+    ASSERT(list.first_pair != NULL, "arena list init - first_pair not null");
+    ASSERT(list.size == 0, "arena list init - size == 0");
+
+    int a = 10, b = 20, c = 30;
+    sct_arena_list_push(&list, &a);
+    sct_arena_list_push(&list, &b);
+    sct_arena_list_push(&list, &c);
+    ASSERT(list.size == 3, "arena list push - size == 3");
+
+    int *v = (int*)sct_arena_list_get(&list, 0);
+    ASSERT(v != NULL && *v == 10, "arena list get(0) == 10");
+    v = (int*)sct_arena_list_get(&list, 2);
+    ASSERT(v != NULL && *v == 30, "arena list get(2) == 30");
+    ASSERT(sct_arena_list_get(&list, 5) == NULL, "arena list get(5) == NULL (out of bounds)");
+
+    int count = 0, sum = 0;
+    sct_arena_foreach(&list) {
+        int val = *(int*)((u8*)cur_pair + sizeof(void*));
+        sum += val;
+        count++;
+    }
+    ASSERT(count == 3 && sum == 60, "arena list foreach - visited all elements");
+
+    sct_arena_list_erase(&list, 0);
+    ASSERT(list.size == 2, "arena list erase - size == 2");
+    v = (int*)sct_arena_list_get(&list, 0);
+    ASSERT(v != NULL && *v == 20, "arena list erase - elements shifted");
+
+    /* deinit must NOT release the arena */
+    size_t arena_size_before = arena.size;
+    sct_arena_list_deinit(&list);
+    ASSERT(arena.size == arena_size_before, "arena list deinit - arena not released");
+
+    sct_arena_deinit(&arena);
+}
+
+/* ==================== ARENA HASHMAP TESTS ==================== */
+static void test_arena_hashmap(void)
+{
+    printf("\n--- Arena Hashmap Tests ---\n");
+
+    sct_arena_t arena;
+    sct_arena_init(&arena);
+
+    sct_arena_hashmap_t map;
+    sct_arena_hashmap_init(&map, &arena, sizeof(int));
+    ASSERT(map.arena == &arena, "arena hashmap init - arena saved");
+
+    int v1 = 100, v2 = 200;
+    sct_arena_hashmap_add(&map, "key1", &v1);
+    sct_arena_hashmap_add(&map, "key2", &v2);
+    ASSERT(sct_arena_hashmap_contains(&map, "key1") == 1, "arena hashmap contains key1");
+    ASSERT(sct_arena_hashmap_contains(&map, "nope") == 0, "arena hashmap contains missing");
+
+    int *g = (int*)sct_arena_hashmap_get(&map, "key1");
+    ASSERT(g != NULL && *g == 100, "arena hashmap get key1 == 100");
+    g = (int*)sct_arena_hashmap_get(&map, "key2");
+    ASSERT(g != NULL && *g == 200, "arena hashmap get key2 == 200");
+
+    sct_arena_hashmap_remove(&map, "key2");
+    ASSERT(sct_arena_hashmap_contains(&map, "key2") == 0, "arena hashmap remove key2");
+    ASSERT(sct_arena_hashmap_contains(&map, "key1") == 1, "arena hashmap still has key1");
+
+    /* deinit must NOT release the arena */
+    size_t arena_size_before = arena.size;
+    sct_arena_hashmap_deinit(&map);
+    ASSERT(arena.size == arena_size_before, "arena hashmap deinit - arena not released");
+
+    sct_arena_deinit(&arena);
+}
+
 /* ==================== EDGE CASE TESTS ==================== */
 static void test_edge_cases(void)
 {
@@ -400,6 +526,9 @@ int main(void)
     printf("=== Simple Types Test Suite ===\n");
 
     test_arena();
+    test_arena_vector();
+    test_arena_list();
+    test_arena_hashmap();
     test_vector();
     test_list();
     test_hashmap();
