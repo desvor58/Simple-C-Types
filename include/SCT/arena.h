@@ -8,10 +8,14 @@
 // size limit after which sct_arena_free completely reallocates the arena as if sct_arena_init was called
 #define SCT_ARENA_FREE_NONALLOC_LIMIT (SCT_ARENA_ALLOC_SIZE * 2)
 
+typedef struct sct_arena_block sct_arena_block_t;
+
 typedef struct {
     u8    *arena;
     size_t size;
     size_t cap;
+    sct_arena_block_t *blocks;
+    sct_arena_block_t *cur;
 } sct_arena_t;
 
 void sct_arena_init(sct_arena_t *arena);
