@@ -2,8 +2,11 @@
 
 void sct_list_init(sct_list_t *list, size_t item_size)
 {
-    list->first_pair = amalloc(sizeof(void*) + item_size);
-    *(void**)list->first_pair = 0;
+    // no allocation here: the sentinel node is created lazily on the first
+    // push. This makes sct_hashmap_init (which inits 128 buckets) cost two
+    // allocations instead of 130 — it used to malloc a sentinel per bucket
+    // even for hashmaps that stay empty.
+    list->first_pair = NULL;
     list->size = 0;
     list->_item_size = item_size;
 }
@@ -19,16 +22,21 @@ static void sct_list_new_pair(sct_list_t *list, void *parent_pair, void *item)
 void sct_list_deinit(sct_list_t *list)
 {
     void *cur_pair = list->first_pair;
-    void *next = *(void**)cur_pair;
     while (cur_pair) {
-        next = *(void**)cur_pair;
+        void *next = *(void**)cur_pair;
         free(cur_pair);
         cur_pair = next;
     }
+    list->first_pair = NULL;
+    list->size = 0;
 }
 
 void sct_list_push(sct_list_t *list, void *item)
 {
+    if (!list->first_pair) {
+        list->first_pair = amalloc(sizeof(void*) + list->_item_size);
+        *(void**)list->first_pair = 0;
+    }
     void *cur_pair = list->first_pair;
     while (*(void**)cur_pair) {
         cur_pair = *(void**)cur_pair;
