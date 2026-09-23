@@ -182,6 +182,12 @@ static void test_hashmap(void)
     sct_hashmap_t map;
     sct_hashmap_init(&map, sizeof(int));
 
+    sct_hashmap_iter_t iter;
+    sct_hashmap_iter_init(&iter, &map);
+    ASSERT(sct_hashmap_iter_next(&iter) == 0, "hashmap iterator on empty map");
+    ASSERT(sct_hashmap_iter_key(&iter) == NULL, "hashmap iterator empty key");
+    ASSERT(sct_hashmap_iter_value(&iter) == NULL, "hashmap iterator empty value");
+
     int v1 = 100, v2 = 200, v3 = 300;
 
     ASSERT(sct_hashmap_contains(&map, "key1") == 0, "hashmap contains 'key1' initially false");
@@ -211,6 +217,46 @@ static void test_hashmap(void)
     ASSERT(sct_hashmap_contains(&map, "key2") == 0, "hashmap contains 'key2' after remove");
     ASSERT(sct_hashmap_contains(&map, "key1") == 1, "hashmap still contains 'key1' after remove");
     ASSERT(sct_hashmap_contains(&map, "key3") == 1, "hashmap still contains 'key3' after remove");
+
+    sct_hashmap_remove(&map, "key1");
+    sct_hashmap_remove(&map, "key3");
+
+    enum { ITER_KEYS_NUM = 256 };
+    int seen[ITER_KEYS_NUM] = {0};
+    for (int i = 0; i < ITER_KEYS_NUM; i++) {
+        char key[32];
+        snprintf(key, sizeof(key), "iter-key-%d", i);
+        int value = i + 1;
+        sct_hashmap_add(&map, key, &value);
+    }
+
+    int count = 0;
+    int invalid = 0;
+    sct_hashmap_iter_init(&iter, &map);
+    while (sct_hashmap_iter_next(&iter)) {
+        const char *key = sct_hashmap_iter_key(&iter);
+        int *value = sct_hashmap_iter_value(&iter);
+        if (!key || !value || *value < 1 || *value > ITER_KEYS_NUM) {
+            invalid = 1;
+            continue;
+        }
+        char expected[32];
+        snprintf(expected, sizeof(expected), "iter-key-%d", *value - 1);
+        if (strcmp(key, expected) || seen[*value - 1]++) {
+            invalid = 1;
+        }
+        count++;
+    }
+
+    int seen_count = 0;
+    for (int i = 0; i < ITER_KEYS_NUM; i++) {
+        seen_count += seen[i] == 1;
+    }
+    ASSERT(!invalid && count == ITER_KEYS_NUM, "hashmap iterator visits every entry once");
+    ASSERT(seen_count == ITER_KEYS_NUM, "hashmap iterator keys match values");
+    ASSERT(sct_hashmap_iter_next(&iter) == 0, "hashmap iterator stays exhausted");
+    ASSERT(sct_hashmap_iter_key(&iter) == NULL, "hashmap iterator exhausted key");
+    ASSERT(sct_hashmap_iter_value(&iter) == NULL, "hashmap iterator exhausted value");
 
     sct_hashmap_deinit(&map);
 }

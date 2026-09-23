@@ -45,6 +45,41 @@ void sct_hashmap_deinit(sct_hashmap_t *map)
     sct_vector_deinit(&map->keys);
 }
 
+void sct_hashmap_iter_init(sct_hashmap_iter_t *iter, sct_hashmap_t *map)
+{
+    iter->bucket = map->buckets;
+    iter->bucket_end = map->buckets + SCT_HASHMAP_BUCKETS_NUM;
+    iter->current_pair = NULL;
+}
+
+int sct_hashmap_iter_next(sct_hashmap_iter_t *iter)
+{
+    if (iter->current_pair) {
+        iter->current_pair = *(void**)iter->current_pair;
+    }
+    while (!iter->current_pair && iter->bucket != iter->bucket_end) {
+        if (iter->bucket->first_pair) {
+            iter->current_pair = *(void**)iter->bucket->first_pair;
+        }
+        iter->bucket++;
+    }
+    return iter->current_pair != NULL;
+}
+
+const char *sct_hashmap_iter_key(const sct_hashmap_iter_t *iter)
+{
+    return iter->current_pair
+        ? container_get_key((u8*)iter->current_pair + sizeof(void*))
+        : NULL;
+}
+
+void *sct_hashmap_iter_value(const sct_hashmap_iter_t *iter)
+{
+    return iter->current_pair
+        ? container_get_val((u8*)iter->current_pair + sizeof(void*))
+        : NULL;
+}
+
 int sct_hashmap_contains(sct_hashmap_t *map, const char *key)
 {
     sct_list_t *bkt = &map->buckets[hash_fnv1a(key, strlen(key)) % SCT_HASHMAP_BUCKETS_NUM];
