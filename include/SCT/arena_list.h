@@ -13,19 +13,39 @@
 
 typedef struct {
     u8           *first_pair;
+    u8           *last_pair;
     size_t        size;
     size_t        _item_size;
     sct_arena_t  *arena;
 } sct_arena_list_t;
 
+typedef struct {
+    sct_arena_list_t *list;
+    void              *previous;
+    void              *current;
+    void              *next;
+} sct_arena_list_iter_t;
+
 void sct_arena_list_init(sct_arena_list_t *list, sct_arena_t *arena, size_t item_size);
 
 void sct_arena_list_deinit(sct_arena_list_t *list);
 
-void sct_arena_list_push(sct_arena_list_t *list, void *item);
+void sct_arena_list_clear(sct_arena_list_t *list);
 
-void *sct_arena_list_get(sct_arena_list_t *list, size_t index);
+void sct_arena_list_push(sct_arena_list_t *list, const void *item);
+
+void *sct_arena_list_get(const sct_arena_list_t *list, size_t index);
 
 void sct_arena_list_erase(sct_arena_list_t *list, size_t index);
+
+size_t sct_arena_list_size(const sct_arena_list_t *list);
+
+void sct_arena_list_iter_init(sct_arena_list_iter_t *iter, sct_arena_list_t *list);
+
+int sct_arena_list_iter_next(sct_arena_list_iter_t *iter);
+
+void *sct_arena_list_iter_value(const sct_arena_list_iter_t *iter);
+
+int sct_arena_list_iter_erase(sct_arena_list_iter_t *iter);
 
 #endif

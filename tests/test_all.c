@@ -119,7 +119,7 @@ static void test_list(void)
 
     sct_list_t list;
     sct_list_init(&list, sizeof(int));
-    ASSERT(list.first_pair != NULL, "list init - first_pair not null");
+    ASSERT(list.first_pair == NULL, "list init - lazy sentinel");
     ASSERT(list.size == 0, "list init - size == 0");
 
     int a = 10, b = 20, c = 30;
@@ -285,13 +285,11 @@ static void test_string(void)
     sct_string_insert(&str, 3, "BEUTIFUL ");
     ASSERT(strcmp(str.cstr, "Hi BEUTIFUL world 42") == 0, "string insert - 'Hi BEUTIFUL world 42'");
 
-    /* replace */
-    sct_string_replace(&str, 3, 12, "beautiful");
+    sct_string_replace(&str, 3, 11, "beautiful");
     ASSERT(strcmp(str.cstr, "Hi beautiful world 42") == 0, "string replace - 'Hi beautiful world 42'");
 
-    /* replace start > end */
-    sct_string_replace(&str, 15, 3, "BIG ");
-    ASSERT(strcmp(str.cstr, "Hi BIG beautiful world 42") == 0, "string replace swapped - 'Hi BIG beautiful world 42'");
+    sct_string_replace(&str, 3, 3, "BIG ");
+    ASSERT(strcmp(str.cstr, "Hi BIG beautiful world 42") == 0, "string insert replacement - 'Hi BIG beautiful world 42'");
 
     /* Insert at end */
     sct_string_insert(&str, str.size, "!");
@@ -408,7 +406,7 @@ static void test_arena_list(void)
     sct_arena_list_t list;
     sct_arena_list_init(&list, &arena, sizeof(int));
     ASSERT(list.arena == &arena, "arena list init - arena saved");
-    ASSERT(list.first_pair != NULL, "arena list init - first_pair not null");
+    ASSERT(list.first_pair == NULL, "arena list init - lazy sentinel");
     ASSERT(list.size == 0, "arena list init - size == 0");
 
     int a = 10, b = 20, c = 30;
@@ -566,6 +564,167 @@ static void test_edge_cases(void)
     sct_list_deinit(&list);
 }
 
+static void test_new_features(void)
+{
+    sct_vector_t vec;
+    sct_vector_init(&vec, sizeof(int));
+    {
+        size_t initial_cap = vec.cap;
+        for (int i = 0; i < 33; i++) {
+            sct_vector_push(&vec, &i);
+        }
+        ASSERT(vec.cap == initial_cap + 4 * sizeof(int), "vector growth increment is four items");
+    }
+    ASSERT(sct_vector_reserve(&vec, 100) == 0, "vector reserve succeeds");
+    ASSERT(sct_vector_capacity(&vec) >= 100, "vector capacity is sufficient");
+    ASSERT(sct_vector_size(&vec) == 33, "vector size accessor");
+    ASSERT(sct_vector_swap_remove(&vec, 0) == 0, "vector swap remove succeeds");
+    sct_vector_deinit(&vec);
+    ASSERT(vec.data == NULL && vec.size == 0 && vec.cap == 0, "vector deinit resets state");
+
+    sct_arena_t arena;
+    sct_arena_init(&arena);
+    {
+        sct_arena_vector_t avec;
+        sct_arena_vector_init(&avec, &arena, sizeof(int));
+        size_t initial_cap = avec.cap;
+        for (int i = 0; i < 33; i++) {
+            sct_arena_vector_push(&avec, &i);
+        }
+        ASSERT(avec.cap == initial_cap + 4 * sizeof(int), "arena vector growth increment is four items");
+        ASSERT(sct_arena_vector_reserve(&avec, 100) == 0, "arena vector reserve succeeds");
+        ASSERT(sct_arena_vector_capacity(&avec) >= 100, "arena vector capacity is sufficient");
+        sct_arena_vector_deinit(&avec);
+        ASSERT(avec.data == NULL && avec.size == 0 && avec.cap == 0 && avec.arena == NULL, "arena vector deinit resets state");
+    }
+
+    {
+        void *aligned = sct_arena_alloc_aligned(&arena, 32, 64);
+        char *zero = sct_arena_alloc_zero(&arena, 16);
+        char *original = sct_arena_alloc(&arena, 4);
+        char *grown;
+        memcpy(original, "abcd", 4);
+        grown = sct_arena_realloc(&arena, original, 4, 8);
+        ASSERT((uintptr_t)aligned % 64 == 0, "arena aligned allocation");
+        for (int i = 0; i < 16; i++) {
+            ASSERT(zero[i] == 0, "arena zero allocation");
+        }
+        ASSERT(grown[0] == 'a' && grown[3] == 'd', "arena realloc copies old data");
+    }
+    sct_arena_deinit(&arena);
+    ASSERT(arena.arena == NULL && arena.size == 0 && arena.cap == 0, "arena deinit resets state");
+
+    {
+        sct_arena_t list_arena;
+        sct_arena_init(&list_arena);
+        sct_arena_list_t alist;
+        sct_arena_list_init(&alist, &list_arena, sizeof(int));
+        ASSERT(alist.first_pair == NULL, "arena list lazy sentinel");
+        for (int i = 0; i < 3; i++) {
+            sct_arena_list_push(&alist, &i);
+        }
+        sct_arena_list_clear(&alist);
+        ASSERT(sct_arena_list_size(&alist) == 0, "arena list clear");
+        int value = 7;
+        sct_arena_list_push(&alist, &value);
+        ASSERT(*(int*)sct_arena_list_get(&alist, 0) == 7, "arena list reuse after clear");
+        sct_arena_list_iter_t ai;
+        sct_arena_list_iter_init(&ai, &alist);
+        ASSERT(sct_arena_list_iter_next(&ai), "arena list iterator next");
+        ASSERT(sct_arena_list_iter_erase(&ai) == 0, "arena list iterator erase");
+        sct_arena_list_deinit(&alist);
+        sct_arena_deinit(&list_arena);
+    }
+
+    {
+        sct_list_t list;
+        sct_list_init(&list, sizeof(int));
+        ASSERT(list.first_pair == NULL, "list lazy sentinel");
+        for (int i = 0; i < 3; i++) {
+            sct_list_push(&list, &i);
+        }
+        int sum = 0;
+        int visited = 0;
+        sct_list_iter_t iter;
+        sct_list_iter_init(&iter, &list);
+        while (sct_list_iter_next(&iter)) {
+            int *value = sct_list_iter_value(&iter);
+            if (*value == 1) {
+                ASSERT(sct_list_iter_erase(&iter) == 0, "list iterator erase");
+            } else {
+                sum += *value;
+                visited++;
+            }
+        }
+        ASSERT(visited == 2 && sum == 2, "list iterator visits after erase");
+        int next_value = 9;
+        sct_list_push(&list, &next_value);
+        ASSERT(sct_list_size(&list) == 3, "list size after iterator erase");
+        sct_list_deinit(&list);
+        ASSERT(list.first_pair == NULL && list.size == 0 && list._item_size == 0, "list deinit resets state");
+    }
+
+    {
+        sct_arena_t map_arena;
+        sct_arena_init(&map_arena);
+        sct_arena_hashmap_t amap;
+        sct_arena_hashmap_init(&amap, &map_arena, sizeof(int));
+        for (int i = 0; i < 300; i++) {
+            char key[32];
+            snprintf(key, sizeof(key), "feature-%d", i);
+            sct_arena_hashmap_add(&amap, key, &i);
+        }
+        ASSERT(sct_arena_hashmap_size(&amap) == 300, "arena hashmap size after rehash");
+        ASSERT(amap.bucket_count > SCT_ARENA_HASHMAP_BUCKETS_NUM, "arena hashmap grows buckets");
+        for (int i = 0; i < 300; i += 2) {
+            char key[32];
+            snprintf(key, sizeof(key), "feature-%d", i);
+            sct_arena_hashmap_remove(&amap, key);
+        }
+        ASSERT(sct_arena_hashmap_size(&amap) == 150, "arena hashmap size after remove");
+        sct_arena_hashmap_deinit(&amap);
+        ASSERT(amap.buckets == NULL && amap.bucket_count == 0 && amap.size == 0, "arena hashmap deinit resets state");
+        sct_arena_deinit(&map_arena);
+    }
+
+    {
+        sct_string_t str;
+        sct_string_init(&str);
+        ASSERT(sct_string_append(&str, "abcdef", 6) == 0, "string append");
+        ASSERT(sct_string_erase(&str, 1, 3) == 0, "string erase");
+        ASSERT(strcmp(str.cstr, "adef") == 0, "string erase result");
+        ASSERT(sct_string_truncate(&str, 2) == 0, "string truncate");
+        ASSERT(strcmp(str.cstr, "ad") == 0, "string truncate result");
+        ASSERT(sct_string_reserve(&str, 1024) == 0 && sct_string_capacity(&str) >= 1024, "string reserve");
+        sct_string_deinit(&str);
+        ASSERT(str.cstr == NULL && str.size == 0 && str.cap == 0, "string deinit resets state");
+    }
+
+    {
+        sct_vector_t source;
+        sct_vector_init(&source, sizeof(int));
+        for (int i = 0; i < 6; i++) {
+            sct_vector_push(&source, &i);
+        }
+        sct_vecslice_t slice;
+        ASSERT(sct_vecslice_init(&slice, &source, source.size, 0) == 0, "empty vecslice at end");
+        ASSERT(sct_vecslice_size(&slice) == 0, "empty vecslice size");
+        ASSERT(sct_vecslice_init(&slice, &source, 2, 3) == 0, "vecslice init");
+        ASSERT(sct_vecslice_advance(&slice, 2) == 0, "vecslice advance");
+        ASSERT(*(int*)sct_vecslice_get(&slice, 0) == 4, "vecslice advance result");
+        ASSERT(sct_vecslice_advance(&slice, 2) == 0, "vecslice advance to empty");
+        ASSERT(sct_vecslice_size(&slice) == 0, "vecslice empty after advance");
+        sct_vector_deinit(&source);
+    }
+
+    {
+        size_t result = 0;
+        ASSERT(sct_align_up_checked(9, 8, &result) == 0 && result == 16, "checked alignment");
+        ASSERT(sct_align_up_checked(SIZE_MAX, 8, &result) != 0, "alignment overflow detected");
+        ASSERT(sct_align_up_checked(1, 3, &result) != 0, "invalid alignment detected");
+    }
+}
+
 int main(void)
 {
     setvbuf(stdout, NULL, _IONBF, 0);
@@ -582,6 +741,7 @@ int main(void)
     test_vecslice();
     test_common();
     test_edge_cases();
+    test_new_features();
 
     printf("\n=== Results: %d passed, %d failed ===\n",
            tests_passed, tests_failed);

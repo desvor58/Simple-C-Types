@@ -2,72 +2,144 @@
 
 void sct_list_init(sct_list_t *list, size_t item_size)
 {
-    // no allocation here: the sentinel node is created lazily on the first
-    // push. This makes sct_hashmap_init (which inits 128 buckets) cost two
-    // allocations instead of 130 — it used to malloc a sentinel per bucket
-    // even for hashmaps that stay empty.
     list->first_pair = NULL;
+    list->last_pair = NULL;
+    list->free_pairs = NULL;
     list->size = 0;
     list->_item_size = item_size;
 }
 
-static void sct_list_new_pair(sct_list_t *list, void *parent_pair, void *item)
-{
-    void *new_pair = amalloc(sizeof(void*) + list->_item_size);
-    *(void**)new_pair = 0;
-    memcpy((u8*)new_pair + sizeof(void*), item, list->_item_size);
-    *(void**)parent_pair = new_pair;
-}
-
 void sct_list_deinit(sct_list_t *list)
 {
-    void *cur_pair = list->first_pair;
+    u8 *cur_pair = list->first_pair;
     while (cur_pair) {
-        void *next = *(void**)cur_pair;
+        u8 *next = *(void**)cur_pair;
+        free(cur_pair);
+        cur_pair = next;
+    }
+    cur_pair = (u8*)list->free_pairs;
+    while (cur_pair) {
+        u8 *next = *(void**)cur_pair;
         free(cur_pair);
         cur_pair = next;
     }
     list->first_pair = NULL;
+    list->last_pair = NULL;
+    list->free_pairs = NULL;
     list->size = 0;
+    list->_item_size = 0;
 }
 
-void sct_list_push(sct_list_t *list, void *item)
+void sct_list_push(sct_list_t *list, const void *item)
 {
+    u8 *new_pair;
     if (!list->first_pair) {
-        list->first_pair = amalloc(sizeof(void*) + list->_item_size);
-        *(void**)list->first_pair = 0;
+        list->first_pair = amalloc(sizeof(void*));
+        *(void**)list->first_pair = NULL;
+        list->last_pair = list->first_pair;
     }
-    void *cur_pair = list->first_pair;
-    while (*(void**)cur_pair) {
-        cur_pair = *(void**)cur_pair;
+    if (list->free_pairs) {
+        new_pair = (u8*)list->free_pairs;
+        list->free_pairs = *(void**)new_pair;
+    } else {
+        if (list->_item_size > SIZE_MAX - sizeof(void*)) {
+            abort();
+        }
+        new_pair = amalloc(sizeof(void*) + list->_item_size);
     }
-    sct_list_new_pair(list, cur_pair, item);
+    *(void**)new_pair = NULL;
+    if (list->_item_size) {
+        memcpy((u8*)new_pair + sizeof(void*), item, list->_item_size);
+    }
+    *(void**)list->last_pair = new_pair;
+    list->last_pair = new_pair;
     list->size++;
 }
 
-void *sct_list_get(sct_list_t *list, size_t index)
+void *sct_list_get(const sct_list_t *list, size_t index)
 {
-    if (index >= list->size || !list->size) return 0;
-    size_t i = 0;
-    void *cur_pair = *(void**)list->first_pair;
-    while (i < index) {
+    u8 *cur_pair;
+    if (index >= list->size) {
+        return NULL;
+    }
+    cur_pair = *(void**)list->first_pair;
+    while (index) {
         cur_pair = *(void**)cur_pair;
-        i++;
+        index--;
     }
     return (u8*)cur_pair + sizeof(void*);
 }
 
 void sct_list_erase(sct_list_t *list, size_t index)
 {
-    if (index >= list->size || !list->size) return;
-
-    void *prev_pair = list->first_pair;
-    for (size_t i = 0; i < index; i++) {
-        prev_pair = *(void**)prev_pair;
+    u8 *prev_pair = list->first_pair;
+    u8 *cur_pair;
+    if (!list->size || index >= list->size) {
+        return;
     }
-
-    void *cur_pair = *(void**)prev_pair;
+    while (index) {
+        prev_pair = *(void**)prev_pair;
+        index--;
+    }
+    cur_pair = *(void**)prev_pair;
     *(void**)prev_pair = *(void**)cur_pair;
-    free(cur_pair);
+    if (list->last_pair == cur_pair) {
+        list->last_pair = prev_pair;
+    }
+    *(void**)cur_pair = list->free_pairs;
+    list->free_pairs = cur_pair;
     list->size--;
+}
+
+size_t sct_list_size(const sct_list_t *list)
+{
+    return list ? list->size : 0;
+}
+
+void sct_list_iter_init(sct_list_iter_t *iter, sct_list_t *list)
+{
+    iter->list = list;
+    iter->previous = list->first_pair;
+    iter->current = NULL;
+    iter->next = list->first_pair ? *(void**)list->first_pair : NULL;
+}
+
+int sct_list_iter_next(sct_list_iter_t *iter)
+{
+    if (!iter->next) {
+        iter->current = NULL;
+        return 0;
+    }
+    if (iter->current) {
+        iter->previous = iter->current;
+    }
+    iter->current = iter->next;
+    iter->next = *(void**)iter->current;
+    return 1;
+}
+
+void *sct_list_iter_value(const sct_list_iter_t *iter)
+{
+    return iter->current
+        ? (u8*)iter->current + sizeof(void*)
+        : NULL;
+}
+
+int sct_list_iter_erase(sct_list_iter_t *iter)
+{
+    void *next_pair;
+    if (!iter->current) {
+        return 1;
+    }
+    next_pair = iter->next;
+    *(void**)iter->previous = next_pair;
+    if (iter->list->last_pair == iter->current) {
+        iter->list->last_pair = iter->previous;
+    }
+    *(void**)iter->current = iter->list->free_pairs;
+    iter->list->free_pairs = iter->current;
+    iter->current = NULL;
+    iter->next = next_pair;
+    iter->list->size--;
+    return 0;
 }
