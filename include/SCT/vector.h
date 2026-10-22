@@ -34,6 +34,8 @@ void sct_vector_insert(sct_vector_t *vec, size_t index, const void *item);
 
 int sct_vector_reserve(sct_vector_t *vec, size_t capacity);
 
+int sct_vector_contains(sct_vector_t *vec, void *item);
+
 size_t sct_vector_size(const sct_vector_t *vec);
 
 size_t sct_vector_capacity(const sct_vector_t *vec);

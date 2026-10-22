@@ -192,6 +192,19 @@ int sct_vector_reserve(sct_vector_t *vec, size_t capacity)
     return 0;
 }
 
+int sct_vector_contains(sct_vector_t *vec, void *item)
+{
+    if (!vec || !item) {
+        return 1;
+    }
+    for (size_t i = 0; i < vec->size; i++) {
+        if (!memcmp(sct_vector_get(vec, i), item, vec->_item_size)) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 size_t sct_vector_size(const sct_vector_t *vec)
 {
     return vec ? vec->size : 0;
