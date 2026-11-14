@@ -1,0 +1,7 @@
+[package]
+name = "Simple-C-Types"
+version = "3.5.0"
+edition = "c99"
+
+[lib]
+name = "sct"
