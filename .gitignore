@@ -1,2 +1,5 @@
 lib/
 obj/
+dcr.lock
+target/
+.dcr

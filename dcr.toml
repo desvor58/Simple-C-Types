@@ -1,7 +1,18 @@
 [package]
 name = "Simple-C-Types"
 version = "3.9.0"
-edition = "c99"
+author = "Desvor"
+license = "MIT"
+dcr-version = "0.9.5"
 
 [lib]
 name = "sct"
+
+[build]
+language = "c"
+standard = "c99"
+compiler = "clang"
+kind = "staticlib"
+cflags = ["-Wall", "-Wextra"]
+include = ["include"]
+filename = "libsct.a"
