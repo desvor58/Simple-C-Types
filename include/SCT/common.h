@@ -24,9 +24,15 @@ void *amalloc(size_t size);
 
 int sct_format(char *buf, size_t buf_size, const char *fmt, ...);
 
+int sct_align_up_checked(size_t size, size_t alignment, size_t *result);
+
 static inline size_t sct_align_up(size_t size)
 {
-    return (size + 7) & ~((size_t)7);
+    size_t result;
+    if (sct_align_up_checked(size, 8, &result)) {
+        abort();
+    }
+    return result;
 }
 
 #endif

@@ -3,8 +3,25 @@
 void *amalloc(size_t size)
 {
     void *ret = malloc(size);
-    if (!ret) abort();
+    if (!ret) {
+        fprintf(stderr, "allocation of %zu bytes failed\n", size);
+        abort();
+    }
     return ret;
+}
+
+int sct_align_up_checked(size_t size, size_t alignment, size_t *result)
+{
+    size_t mask;
+    if (!alignment || !result || (alignment & (alignment - 1))) {
+        return 1;
+    }
+    mask = alignment - 1;
+    if (size > SIZE_MAX - mask) {
+        return 1;
+    }
+    *result = (size + mask) & ~mask;
+    return 0;
 }
 
 int sct_format(char *buf, size_t buf_size, const char *fmt, ...)
