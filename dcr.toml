@@ -1,6 +1,6 @@
 [package]
 name = "Simple-C-Types"
-version = "3.5.0"
+version = "3.9.0"
 edition = "c99"
 
 [lib]
