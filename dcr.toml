@@ -1,12 +1,9 @@
 [package]
-name = "Simple-C-Types"
+name = "libsct"
 version = "3.9.0"
 author = "Desvor"
 license = "MIT"
 dcr-version = "0.9.5"
-
-[lib]
-name = "sct"
 
 [build]
 language = "c"
